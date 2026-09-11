@@ -1,0 +1,50 @@
+/* Factsheet Component Styles */
+.factsheet-section {
+  margin-bottom: var(--space-2xl);
+}
+
+.factsheet-title {
+  font-size: 1.5rem;
+  color: var(--color-text);
+  margin-bottom: var(--space-lg);
+}
+
+.factsheet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-md);
+}
+
+.factsheet-item {
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  transition: all var(--transition-fast);
+}
+
+.factsheet-item:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.factsheet-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-xs);
+}
+
+.factsheet-value {
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .factsheet-grid {
+    grid-template-columns: 1fr;
+  }
+}

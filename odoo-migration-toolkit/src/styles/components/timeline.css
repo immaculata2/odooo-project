@@ -1,0 +1,108 @@
+/* Timeline Component Styles */
+.timeline-section {
+  margin-bottom: var(--space-2xl);
+}
+
+.timeline-title {
+  font-size: 1.5rem;
+  color: var(--color-text);
+  margin-bottom: var(--space-lg);
+}
+
+.timeline {
+  position: relative;
+  padding-left: var(--space-xl);
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--color-border);
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: var(--space-xl);
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: calc(-1 * var(--space-xl) + 2px);
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--color-bg-surface);
+  border: 2px solid var(--color-border);
+  transition: all var(--transition-fast);
+}
+
+.timeline-item.completed .timeline-dot {
+  background-color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.timeline-item.current .timeline-dot {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(14, 110, 98, 0.2);
+}
+
+.timeline-item.pending .timeline-dot {
+  background-color: var(--color-pending);
+  border-color: var(--color-pending);
+}
+
+.timeline-date {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-xs);
+}
+
+.timeline-content {
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  transition: all var(--transition-fast);
+}
+
+.timeline-item:hover .timeline-content {
+  border-color: var(--color-primary);
+  transform: translateX(4px);
+}
+
+.timeline-title-item {
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--space-xs);
+}
+
+.timeline-description {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .timeline {
+    padding-left: var(--space-lg);
+  }
+  
+  .timeline::before {
+    left: 4px;
+  }
+  
+  .timeline-dot {
+    left: calc(-1 * var(--space-lg) + 4px);
+  }
+}
