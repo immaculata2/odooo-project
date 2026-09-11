@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Odoo Migration Validation Toolkit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2F5F3;
+    --surface: #FFFFFF;
+    --surface-2: #EAEFEC;
+    --ink: #142521;
+    --ink-muted: #4C615A;
+    --ink-faint: #7C8F88;
+    --border: #D7E0DB;
+    --border-strong: #B9C7C0;
+    --accent: #0E6E62;
+    --accent-ink: #06403A;
+    --accent-soft: #E1F1EC;
+    --status-done: #2E7D46;
+    --status-done-bg: #E5F3E7;
+    --status-done-bd: #BFE0C6;
+    --status-pending: #A6690A;
+    --status-pending-bg: #FBEEDA;
+    --status-pending-bd: #EFCE99;
+    --shadow: 0 1px 2px rgba(20, 37, 33, 0.06), 0 8px 24px -12px rgba(20, 37, 33, 0.18);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0E1614;
+      --surface: #15201D;
+      --surface-2: #1B2724;
+      --ink: #E7EEEB;
+      --ink-muted: #9CB0A9;
+      --ink-faint: #6D817A;
+      --border: #263631;
+      --border-strong: #34473F;
+      --accent: #52D6C3;
+      --accent-ink: #BEF3E8;
+      --accent-soft: #17302B;
+      --status-done: #79D392;
+      --status-done-bg: #17301F;
+      --status-done-bd: #2A4C33;
+      --status-pending: #EBB958;
+      --status-pending-bg: #382A10;
+      --status-pending-bd: #5B4419;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -12px rgba(0,0,0,0.5);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0E1614;
+    --surface: #15201D;
+    --surface-2: #1B2724;
+    --ink: #E7EEEB;
+    --ink-muted: #9CB0A9;
+    --ink-faint: #6D817A;
+    --border: #263631;
+    --border-strong: #34473F;
+    --accent: #52D6C3;
+    --accent-ink: #BEF3E8;
+    --accent-soft: #17302B;
+    --status-done: #79D392;
+    --status-done-bg: #17301F;
+    --status-done-bd: #2A4C33;
+    --status-pending: #EBB958;
+    --status-pending-bg: #382A10;
+    --status-pending-bd: #5B4419;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -12px rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+  }
+
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+
+  /* ---------- Header ---------- */
+  header.hero {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  h1.title {
+    font-size: clamp(30px, 4.4vw, 42px);
+    line-height: 1.12;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    margin: 0;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+
+  .subtitle {
+    font-size: 17px;
+    color: var(--ink-muted);
+    max-width: 62ch;
+    margin: 0;
+  }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    color: var(--ink-faint);
+  }
+  .meta-row span b { color: var(--ink-muted); font-weight: 500; }
+
+  /* ---------- Status summary strip ---------- */
+  .summary-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 48px;
+    box-shadow: var(--shadow);
+  }
+  .stat {
+    background: var(--surface);
+    padding: 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stat .n {
+    font-family: "IBM Plex Mono", monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .stat .n.done { color: var(--status-done); }
+  .stat .n.pending { color: var(--status-pending); }
+  .stat .l {
+    font-size: 12px;
+    color: var(--ink-faint);
+    letter-spacing: 0.01em;
+  }
+
+  @media (max-width: 640px) {
+    .summary-strip { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ---------- Sections ---------- */
+  section { margin-bottom: 52px; }
+  section:last-of-type { margin-bottom: 0; }
+
+  h2.sec {
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.005em;
+    margin: 0 0 6px;
+    padding-left: 14px;
+    border-left: 3px solid var(--accent);
+    color: var(--ink);
+    text-wrap: balance;
+  }
+
+  .sec-note {
+    padding-left: 17px;
+    font-size: 14px;
+    color: var(--ink-faint);
+    margin: 0 0 18px;
+  }
+
+  p.body-text {
+    max-width: 68ch;
+    color: var(--ink);
+    margin: 0 0 14px;
+  }
+  p.body-text.muted { color: var(--ink-muted); }
+
+  .flag {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: var(--status-pending-bg);
+    border: 1px solid var(--status-pending-bd);
+    color: var(--status-pending);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    max-width: 68ch;
+  }
+  .flag b { color: inherit; }
+
+  /* ---------- Timeline ---------- */
+  .timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-left: 1px solid var(--border-strong);
+    margin-left: 4px;
+  }
+  .timeline li {
+    position: relative;
+    padding: 0 0 22px 26px;
+  }
+  .timeline li::before {
+    content: "";
+    position: absolute;
+    left: -5px;
+    top: 5px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--accent);
+  }
+  .timeline li:last-child { padding-bottom: 0; }
+  .t-date {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 5px;
+    margin-bottom: 6px;
+  }
+  .t-text { color: var(--ink); font-size: 15px; max-width: 60ch; }
+
+  /* ---------- Pills ---------- */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .pill.done { color: var(--status-done); background: var(--status-done-bg); border-color: var(--status-done-bd); }
+  .pill.pending { color: var(--status-pending); background: var(--status-pending-bg); border-color: var(--status-pending-bd); }
+  .pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* ---------- Checklist ---------- */
+  .checklist {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+  .checklist-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .checklist-row:last-child { border-bottom: none; }
+  .checklist-row:nth-child(odd) { background: var(--surface-2); }
+  .cl-main { display: flex; flex-direction: column; gap: 2px; }
+  .cl-title { font-weight: 600; font-size: 14.5px; color: var(--ink); }
+  .cl-desc { font-size: 13px; color: var(--ink-faint); }
+
+  /* ---------- Data table ---------- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; background: var(--surface); }
+  thead th {
+    text-align: left;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    background: var(--surface-2);
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody td {
+    padding: 11px 16px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--ink);
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:nth-child(even) { background: var(--surface-2); }
+  td.result { color: var(--ink-faint); font-family: "IBM Plex Mono", monospace; font-size: 13px; }
+
+  /* ---------- Fact sheet (eTIMS) ---------- */
+  .factsheet {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .fact {
+    background: var(--surface);
+    padding: 12px 16px;
+  }
+  .fact .fk { font-size: 11.5px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  .fact .fv { font-family: "IBM Plex Mono", monospace; font-size: 14px; color: var(--ink); }
+  @media (max-width: 560px) { .factsheet { grid-template-columns: 1fr; } }
+
+  ul.plain { margin: 0; padding-left: 20px; }
+  ul.plain li { margin-bottom: 8px; color: var(--ink); font-size: 15px; max-width: 62ch; }
+  ul.plain li::marker { color: var(--accent); }
+
+  footer.page-foot {
+    margin-top: 64px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    color: var(--ink-faint);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <span class="eyebrow">Labocast Kenya &middot; Odoo Community v10</span>
+    <h1 class="title">Odoo Migration Validation Toolkit</h1>
+    <p class="subtitle">Documentation and technical validation kit for the takeover of the Odoo environment, from Octaly's hosting to an independent infrastructure.</p>
+    <div class="meta-row">
+      <span><b>Version:</b> 26/08/2026</span>
+      <span><b>Scope:</b> Reuni Dent Africa Ltd — Labocast Kenya</span>
+      <span><b>Overall status:</b> Package transmitted, validation pending</span>
+    </div>
+  </header>
+
+  <div class="summary-strip">
+    <div class="stat"><div class="n done">1</div><div class="l">Confirmed step</div></div>
+    <div class="stat"><div class="n pending">11</div><div class="l">Items to validate</div></div>
+    <div class="stat"><div class="n pending">13</div><div class="l">Tests to run</div></div>
+    <div class="stat"><div class="n">1</div><div class="l">Regulatory filing submitted</div></div>
+  </div>
+
+  <section id="objectif">
+    <h2 class="sec">1 — Purpose of the artefact</h2>
+    <p class="body-text">This document frames the migration of Labocast Kenya's Odoo Community v10 environment from provider Octaly's hosting to an independent infrastructure. It serves as the guiding thread to verify that the takeover is reliable, documented, and ready for production — before any final cut-over.</p>
+  </section>
+
+  <section id="contexte">
+    <h2 class="sec">2 — Project context</h2>
+    <p class="body-text">Labocast Kenya runs an Odoo Community v10 database hosted and maintained by Octaly (<span class="mono">labocast-kenya.octaly.app</span>). As part of structuring the Reuni Dent / Labocast group's operations, management decided to take back full ownership of this environment.</p>
+
+    <ul class="timeline">
+      <li><span class="t-date">01/07/2026</span><div class="t-text">Discussions opened with a technical Odoo / DevOps consultant for the takeover and security hardening of the database.</div></li>
+      <li><span class="t-date">02–07/07/2026</span><div class="t-text">Mission scoping: audit, data recovery, redeployment, security hardening, backups, documentation.</div></li>
+      <li><span class="t-date">14/07/2026</span><div class="t-text">Octaly begins preparing the handover package (PostgreSQL dump, filestore, custom modules, dependencies).</div></li>
+      <li><span class="t-date">27/07/2026</span><div class="t-text">Octaly provides the link to the data and Labocast Kenya-specific modules.</div></li>
+      <li><span class="t-date">30/07/2026</span><div class="t-text">Full package forwarded to the technical consultant in charge of the takeover.</div></li>
+    </ul>
+  </section>
+
+  <section id="architecture">
+    <h2 class="sec">3 — Target architecture</h2>
+    <p class="body-text">Rebuilt on a clean infrastructure, independent from Octaly's internal architecture (not disclosed):</p>
+    <ul class="plain">
+      <li>Dedicated or cloud Linux server (Ubuntu)</li>
+      <li>PostgreSQL — version compatible with Odoo Community v10</li>
+      <li>Python — environment and dependencies compatible with existing modules</li>
+      <li>Odoo Community v10 — database + filestore restoration, reinstallation of custom modules</li>
+      <li>Nginx front-end, with SSL certificate</li>
+      <li>Hardening: SSH key authentication, firewall (UFW), Fail2ban, root login disabled</li>
+      <li>Daily automated backups, with a restore test</li>
+    </ul>
+  </section>
+
+  <section id="checklist">
+    <h2 class="sec">4 — Migration checklist</h2>
+    <p class="sec-note">1 confirmed step out of 12 — the rest is still to be validated by the technical consultant.</p>
+    <div class="checklist">
+      <div class="checklist-row"><div class="cl-main"><div class="cl-title">Audit of the source environment</div><div class="cl-desc">Odoo / PostgreSQL / Python / Ubuntu versions, installed modules</div></div><span class="pill pending">To validate</span></div>
+      <div class="checklist-row"><div class="cl-main"><div class="cl-title">Data recovery</div><div class="cl-desc">PostgreSQL dump, filestore, add-ons, configuration</div></div><span class="pill done">Done — 30/07</span></div>
+      <div class="checklist-row"><div class="cl-main"><div class="cl-title">Target server preparation</div><div class="cl-desc">Linux server, baseline hardening</div></div><span class="pill pending">To validate</span></div>
+      <div class="checklist-row"><div class="cl-main"><div class="cl-title">Odoo v10 installation</div><div class="cl-desc">Odoo, PostgreSQL, Python dependencies</div></div><span class="pill pending">To validate</span></div>
+      <div class="checklist-row"><div class="cl-main"><div class="cl-title">Database + filestore restore</div><div class="cl-desc">Integrity of restored data</div></div><span class="pill pending">To validate</span></div>
+      <div class="checklist-row"><div class="cl-main"><div class="cl-title">Custom modules</div><div class="cl-desc">Reinstallation and verification of business modules</div></div><span class="pill pending">To validate</span></div>
+      <div class="checklist-row"><div class="cl-main"><div class="cl-title">Nginx / SSL</div><div class="cl-desc">Domain or subdomain, certificate</div></div><span class="pill pending">To validate</span></div>
+      <div class="checklist-row"><div class="cl-main"><div class="cl-title">Server hardening</div><div class="cl-desc">SSH keys, firewall, Fail2ban</div></div><span class="pill pending">To validate</span></div>
+      <div class="checklist-row"><div class="cl-main"><div class="cl-title">Automated backups</div><div class="cl-desc">Setup + real restore test</div></div><span class="pill pending">To validate</span></div>
+      <div class="checklist-row"><div class="cl-main"><div class="cl-title">Technical documentation</div><div class="cl-desc">Architecture, procedures, access, maintenance</div></div><span class="pill pending">To validate</span></div>
+      <div class="checklist-row"><div class="cl-main"><div class="cl-title">Staging environment</div><div class="cl-desc">Made available for functional testing</div></div><span class="pill pending">To validate</span></div>
+    </div>
+  </section>
+
+  <section id="tests">
+    <h2 class="sec">5 — Validation registry (staging tests)</h2>
+    <p class="sec-note">Registry currently empty: no test has been formally reported yet. To be run through as soon as staging opens.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Function tested</th><th>Expected result</th><th>Observed result</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>User login</td><td>Nominal access per assigned rights</td><td class="result">—</td><td><span class="pill pending">To test</span></td></tr>
+          <tr><td>Orders (creation / edit)</td><td>Data consistency</td><td class="result">—</td><td><span class="pill pending">To test</span></td></tr>
+          <tr><td>Case reception and scanning</td><td>Correct production flow</td><td class="result">—</td><td><span class="pill pending">To test</span></td></tr>
+          <tr><td>Production status changes</td><td>Correct workflow update</td><td class="result">—</td><td><span class="pill pending">To test</span></td></tr>
+          <tr><td>Courier management</td><td>Functional logistics tracking</td><td class="result">—</td><td><span class="pill pending">To test</span></td></tr>
+          <tr><td>Invoicing</td><td>Correct invoice generation</td><td class="result">—</td><td><span class="pill pending">To test</span></td></tr>
+          <tr><td>PDF printing</td><td>Correct rendering (invoices, reports)</td><td class="result">—</td><td><span class="pill pending">To test</span></td></tr>
+          <tr><td>E-mail sending</td><td>Effective delivery of notifications</td><td class="result">—</td><td><span class="pill pending">To test</span></td></tr>
+          <tr><td>Scheduled tasks (cron)</td><td>Correct automatic execution</td><td class="result">—</td><td><span class="pill pending">To test</span></td></tr>
+          <tr><td>Customer history</td><td>Continuity of historical data</td><td class="result">—</td><td><span class="pill pending">To test</span></td></tr>
+          <tr><td>Attachments / files</td><td>Accessibility and integrity</td><td class="result">—</td><td><span class="pill pending">To test</span></td></tr>
+          <tr><td>Access rights, Kenya / Labo OI</td><td>Correct separation of access</td><td class="result">—</td><td><span class="pill pending">To test</span></td></tr>
+          <tr><td>Overall performance</td><td>Acceptable response times</td><td class="result">—</td><td><span class="pill pending">To test</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="etims">
+    <h2 class="sec">6 — Feasibility study: KRA eTIMS integration</h2>
+    <p class="body-text">A parallel study for Kenyan tax compliance via eTIMS (Kenya Revenue Authority) — Acknowledgement and Commitment Form submitted on 11/08/2026.</p>
+    <div class="factsheet">
+      <div class="fact"><div class="fk">Entity</div><div class="fv">Reuni Dent Africa Ltd</div></div>
+      <div class="fact"><div class="fk">PIN</div><div class="fv">P052438337K</div></div>
+      <div class="fact"><div class="fk">Integration selected</div><div class="fv">OSCU (Online Sales Control Unit)</div></div>
+      <div class="fact"><div class="fk">Integration mode</div><div class="fv">Self-integration (no third-party integrator)</div></div>
+      <div class="fact"><div class="fk">Invoicing system</div><div class="fv">Odoo 10.0 CE — module occ_labocast_kenya</div></div>
+      <div class="fact"><div class="fk">KRA form submitted</div><div class="fv">11/08/2026</div></div>
+    </div>
+    <p class="body-text muted">Next step: specify the Odoo v10 connector for exchanging with the OSCU (invoice issuance, receipt of fiscal identifiers), in line with the new takeover infrastructure.</p>
+  </section>
+
+  <section id="etat">
+    <h2 class="sec">7 — Status as of 26/08/2026</h2>
+    <div class="flag">
+      <b>Note:</b>&nbsp;only the handover package transfer is confirmed in writing. Staging, tests, backups, and documentation remain unconfirmed to date — this toolkit exists precisely to frame their validation.
+    </div>
+  </section>
+
+  <section id="next">
+    <h2 class="sec">8 — Next steps</h2>
+    <ul class="plain">
+      <li>Obtain a precise technical report and access to the staging environment</li>
+      <li>Run through the validation registry (section 5) with real results</li>
+      <li>Document any anomalies found, with supporting evidence</li>
+      <li>Validate backups with a real restore test</li>
+      <li>Continue specifying the eTIMS / OSCU connector for Odoo v10</li>
+    </ul>
+  </section>
+
+  <footer class="page-foot">
+    <span>Odoo Migration Validation Toolkit</span>
+    <span>Labocast Kenya · v.26/08/2026</span>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infrastructure Verification Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2F5F3;
+    --surface: #FFFFFF;
+    --surface-2: #EAEFEC;
+    --ink: #142521;
+    --ink-muted: #4C615A;
+    --ink-faint: #7C8F88;
+    --border: #D7E0DB;
+    --border-strong: #B9C7C0;
+    --accent: #0E6E62;
+    --accent-ink: #06403A;
+    --accent-soft: #E1F1EC;
+    --status-done: #2E7D46;
+    --status-done-bg: #E5F3E7;
+    --status-done-bd: #BFE0C6;
+    --status-pending: #A6690A;
+    --status-pending-bg: #FBEEDA;
+    --status-pending-bd: #EFCE99;
+    --shadow: 0 1px 2px rgba(20, 37, 33, 0.06), 0 8px 24px -12px rgba(20, 37, 33, 0.18);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0E1614; --surface: #15201D; --surface-2: #1B2724;
+      --ink: #E7EEEB; --ink-muted: #9CB0A9; --ink-faint: #6D817A;
+      --border: #263631; --border-strong: #34473F;
+      --accent: #52D6C3; --accent-ink: #BEF3E8; --accent-soft: #17302B;
+      --status-done: #79D392; --status-done-bg: #17301F; --status-done-bd: #2A4C33;
+      --status-pending: #EBB958; --status-pending-bg: #382A10; --status-pending-bd: #5B4419;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -12px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0E1614; --surface: #15201D; --surface-2: #1B2724;
+    --ink: #E7EEEB; --ink-muted: #9CB0A9; --ink-faint: #6D817A;
+    --border: #263631; --border-strong: #34473F;
+    --accent: #52D6C3; --accent-ink: #BEF3E8; --accent-soft: #17302B;
+    --status-done: #79D392; --status-done-bg: #17301F; --status-done-bd: #2A4C33;
+    --status-pending: #EBB958; --status-pending-bg: #382A10; --status-pending-bd: #5B4419;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -12px rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 760px; margin: 0 auto; padding: 56px 24px 96px; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+
+  header.hero {
+    display: flex; flex-direction: column; gap: 16px;
+    padding-bottom: 28px; border-bottom: 1px solid var(--border); margin-bottom: 36px;
+  }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace; font-size: 12.5px; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--accent); font-weight: 600;
+  }
+  h1.title {
+    font-size: clamp(26px, 4vw, 36px); line-height: 1.15; font-weight: 700;
+    letter-spacing: -0.015em; margin: 0; text-wrap: balance; color: var(--ink);
+  }
+  .subtitle { font-size: 16px; color: var(--ink-muted); max-width: 62ch; margin: 0; }
+  .meta-row {
+    display: flex; flex-wrap: wrap; gap: 8px 20px;
+    font-family: "IBM Plex Mono", monospace; font-size: 13px; color: var(--ink-faint);
+  }
+  .meta-row span b { color: var(--ink-muted); font-weight: 500; }
+
+  .verdict {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--status-done-bg); border: 1px solid var(--status-done-bd);
+    color: var(--status-done); border-radius: 10px; padding: 14px 18px;
+    margin-bottom: 40px; box-shadow: var(--shadow);
+  }
+  .verdict .dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+  .verdict b { color: inherit; }
+  .verdict .text { font-size: 14.5px; color: var(--ink); }
+  .verdict .text b { color: var(--status-done); }
+
+  section { margin-bottom: 44px; }
+  section:last-of-type { margin-bottom: 0; }
+  h2.sec {
+    font-size: 19px; font-weight: 700; letter-spacing: -0.005em;
+    margin: 0 0 14px; padding-left: 14px; border-left: 3px solid var(--accent);
+    color: var(--ink); text-wrap: balance;
+  }
+  p.body-text { max-width: 66ch; color: var(--ink); margin: 0 0 14px; }
+  p.body-text.muted { color: var(--ink-muted); }
+
+  /* method steps */
+  .steps { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
+  .step { display: grid; grid-template-columns: 28px 1fr; gap: 12px; padding: 13px 18px; border-bottom: 1px solid var(--border); align-items: start; }
+  .step:last-child { border-bottom: none; }
+  .step:nth-child(odd) { background: var(--surface-2); }
+  .step .idx { font-family: "IBM Plex Mono", monospace; font-size: 13px; font-weight: 600; color: var(--accent); padding-top: 1px; }
+  .step .txt { font-size: 14.5px; color: var(--ink); }
+  .step .txt .r { display: block; margin-top: 3px; font-size: 13px; color: var(--ink-faint); font-family: "IBM Plex Mono", monospace; }
+
+  /* findings grid */
+  .findings { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow); }
+  .find { background: var(--surface); padding: 14px 16px; }
+  .find .fk { font-size: 11.5px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .find .fv { font-family: "IBM Plex Mono", monospace; font-size: 14px; color: var(--ink); line-height: 1.5; }
+  @media (max-width: 560px) { .findings { grid-template-columns: 1fr; } }
+
+  /* confirmed vs open */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 620px) { .split { grid-template-columns: 1fr; } }
+  .col { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); overflow: hidden; }
+  .col-head { padding: 10px 16px; font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .col-head.ok { background: var(--status-done-bg); color: var(--status-done); }
+  .col-head.pending { background: var(--status-pending-bg); color: var(--status-pending); }
+  .col ul { margin: 0; padding: 14px 16px 14px 32px; }
+  .col li { font-size: 14px; margin-bottom: 8px; color: var(--ink); }
+  .col li:last-child { margin-bottom: 0; }
+
+  .flag {
+    display: flex; align-items: flex-start; gap: 8px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--ink-muted); border-radius: 8px; padding: 12px 14px; font-size: 13.5px; max-width: 66ch;
+  }
+  .flag b { color: var(--ink); }
+
+  footer.page-foot {
+    margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--border);
+    font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-faint);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <span class="eyebrow">Labocast Kenya &middot; Odoo Community v10</span>
+    <h1 class="title">Infrastructure Verification Log</h1>
+    <p class="subtitle">Direct browser check of the independent hosting environment reported for the migration — companion note to the Validation Toolkit.</p>
+    <div class="meta-row">
+      <span><b>Date:</b> 26/08/2026</span>
+      <span><b>Method:</b> direct browser navigation</span>
+      <span><b>Checked by:</b> project support (this session)</span>
+    </div>
+  </header>
+
+  <div class="verdict">
+    <span class="dot"></span>
+    <span class="text"><b>Confirmed:</b> an independent Odoo server is live and publicly reachable — the first hard evidence beyond the handover-package transmission.</span>
+  </div>
+
+  <section id="method">
+    <h2 class="sec">Method</h2>
+    <div class="steps">
+      <div class="step"><span class="idx">1</span><div class="txt">Opened the reported server address in the browser.<span class="r">Result: page loaded, no connection error.</span></div></div>
+      <div class="step"><span class="idx">2</span><div class="txt">Read the homepage title and visible content.<span class="r">Result: "Homepage | Labocast Kenya" — "Precision for dentists. Passion from the lab."</span></div></div>
+      <div class="step"><span class="idx">3</span><div class="txt">Followed the "Sign in" link.<span class="r">Result: standard Odoo login screen at /web/login.</span></div></div>
+      <div class="step"><span class="idx">4</span><div class="txt">Checked for a database selector on the login screen.<span class="r">Result: none shown — consistent with a single, dedicated database.</span></div></div>
+      <div class="step"><span class="idx">5</span><div class="txt">Login credentials.<span class="r">Not attempted — no credentials available, and not this session's place to try.</span></div></div>
+    </div>
+  </section>
+
+  <section id="findings">
+    <h2 class="sec">What was observed</h2>
+    <div class="findings">
+      <div class="find"><div class="fk">Homepage title</div><div class="fv">Homepage | Labocast Kenya</div></div>
+      <div class="find"><div class="fk">Tagline</div><div class="fv">Precision for dentists. Passion from the lab.</div></div>
+      <div class="find"><div class="fk">Login route</div><div class="fv">/web/login (standard Odoo)</div></div>
+      <div class="find"><div class="fk">Database selector</div><div class="fv">Not shown — single database</div></div>
+    </div>
+  </section>
+
+  <section id="status">
+    <h2 class="sec">Confirmed vs. still open</h2>
+    <div class="split">
+      <div class="col">
+        <div class="col-head ok">Confirmed today</div>
+        <ul>
+          <li>An independent server is deployed and reachable</li>
+          <li>Odoo is installed and serving the website module</li>
+          <li>A working login screen is exposed</li>
+        </ul>
+      </div>
+      <div class="col">
+        <div class="col-head pending">Still open</div>
+        <ul>
+          <li>Whether this is the migrated production data or a fresh install</li>
+          <li>Functional test results (see Toolkit §5)</li>
+          <li>Backup / restore validation</li>
+          <li>Technical documentation handover</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="flag"><b>Note:</b>&nbsp;the exact server address is kept out of this note by design, since it may end up referenced in a publicly listed video for the assignment — it is available internally on request.</div>
+
+  <footer class="page-foot">
+    <span>Infrastructure Verification Log</span>
+    <span>Labocast Kenya · 26/08/2026</span>
+  </footer>
+
+</div>
+</body>
+</html>

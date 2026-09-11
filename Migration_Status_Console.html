@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Migration Status Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2F5F3;
+    --surface: #FFFFFF;
+    --surface-2: #EAEFEC;
+    --surface-3: #DFE8E3;
+    --ink: #142521;
+    --ink-muted: #4C615A;
+    --ink-faint: #7C8F88;
+    --border: #D7E0DB;
+    --border-strong: #B9C7C0;
+    --accent: #0E6E62;
+    --accent-ink: #06403A;
+    --accent-soft: #E1F1EC;
+    --status-done: #2E7D46;
+    --status-done-bg: #E5F3E7;
+    --status-done-bd: #BFE0C6;
+    --status-pending: #A6690A;
+    --status-pending-bg: #FBEEDA;
+    --status-pending-bd: #EFCE99;
+    --status-fail: #B23A3A;
+    --status-fail-bg: #FBE7E7;
+    --status-fail-bd: #F0BEBE;
+    --shadow: 0 1px 2px rgba(20, 37, 33, 0.06), 0 8px 24px -12px rgba(20, 37, 33, 0.2);
+    --focus: #0E6E62;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0E1614; --surface: #15201D; --surface-2: #1B2724; --surface-3: #223129;
+      --ink: #E7EEEB; --ink-muted: #9CB0A9; --ink-faint: #6D817A;
+      --border: #263631; --border-strong: #34473F;
+      --accent: #52D6C3; --accent-ink: #BEF3E8; --accent-soft: #17302B;
+      --status-done: #79D392; --status-done-bg: #17301F; --status-done-bd: #2A4C33;
+      --status-pending: #EBB958; --status-pending-bg: #382A10; --status-pending-bd: #5B4419;
+      --status-fail: #E68585; --status-fail-bg: #341717; --status-fail-bd: #542626;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -12px rgba(0,0,0,0.6);
+      --focus: #79E9D8;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0E1614; --surface: #15201D; --surface-2: #1B2724; --surface-3: #223129;
+    --ink: #E7EEEB; --ink-muted: #9CB0A9; --ink-faint: #6D817A;
+    --border: #263631; --border-strong: #34473F;
+    --accent: #52D6C3; --accent-ink: #BEF3E8; --accent-soft: #17302B;
+    --status-done: #79D392; --status-done-bg: #17301F; --status-done-bd: #2A4C33;
+    --status-pending: #EBB958; --status-pending-bg: #382A10; --status-pending-bd: #5B4419;
+    --status-fail: #E68585; --status-fail-bg: #341717; --status-fail-bd: #542626;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -12px rgba(0,0,0,0.6);
+    --focus: #79E9D8;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 15.5px; line-height: 1.55; -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+  button { font: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .app { max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
+    padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; flex-direction: column; gap: 4px; }
+  .brand .eyebrow {
+    font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--accent); font-weight: 600;
+  }
+  .brand h1 {
+    font-size: clamp(22px, 3vw, 28px); font-weight: 700; margin: 0; letter-spacing: -0.01em;
+  }
+  .live-chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 600;
+    background: var(--status-done-bg); color: var(--status-done);
+    border: 1px solid var(--status-done-bd); border-radius: 999px; padding: 5px 12px;
+    align-self: flex-start;
+  }
+  .live-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 2s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .live-chip .dot { animation: none; } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  /* ---------- Overview stat row ---------- */
+  .overview {
+    display: grid; grid-template-columns: 180px 1fr; gap: 20px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px; margin-bottom: 24px; box-shadow: var(--shadow);
+  }
+  @media (max-width: 640px) { .overview { grid-template-columns: 1fr; } }
+
+  .ring-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+  .ring { position: relative; width: 128px; height: 128px; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--surface-3); stroke-width: 10; }
+  .ring-fg { fill: none; stroke: var(--accent); stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
+  .ring-label {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .ring-label .n { font-family: "IBM Plex Mono", monospace; font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .ring-label .l { font-size: 11px; color: var(--ink-faint); }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 480px) { .stat-grid { grid-template-columns: 1fr 1fr; } }
+  .stat-tile { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .stat-tile .n { font-family: "IBM Plex Mono", monospace; font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .stat-tile .n.done { color: var(--status-done); }
+  .stat-tile .n.pending { color: var(--status-pending); }
+  .stat-tile .l { font-size: 11.5px; color: var(--ink-faint); margin-top: 2px; }
+
+  /* ---------- Tabs ---------- */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .tab {
+    appearance: none; background: none; border: none; cursor: pointer;
+    padding: 10px 16px; font-size: 14px; font-weight: 600; color: var(--ink-faint);
+    border-bottom: 2px solid transparent; white-space: nowrap;
+  }
+  .tab:hover { color: var(--ink-muted); }
+  .tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .panel { display: none; }
+  .panel.active { display: block; animation: fade 0.18s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(2px);} to { opacity: 1; transform: none; } }
+
+  /* ---------- Filter row ---------- */
+  .filter-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+  .filter-btn {
+    appearance: none; cursor: pointer; border-radius: 999px; padding: 5px 13px;
+    font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 600;
+    border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink-muted);
+  }
+  .filter-btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent); }
+  .filter-spacer { flex: 1; }
+  .hint { font-size: 12.5px; color: var(--ink-faint); }
+
+  /* ---------- Checklist ---------- */
+  .checklist { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
+  .cl-row {
+    display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;
+    padding: 13px 16px; border-bottom: 1px solid var(--border); cursor: pointer;
+    background: var(--surface); transition: background 0.12s ease;
+  }
+  .cl-row:last-child { border-bottom: none; }
+  .cl-row:nth-child(odd) { background: var(--surface-2); }
+  .cl-row:hover { background: var(--surface-3); }
+  .cl-row:focus-visible { outline-offset: -2px; }
+  .cl-main { display: flex; flex-direction: column; gap: 2px; }
+  .cl-title { font-weight: 600; font-size: 14px; }
+  .cl-desc { font-size: 12.5px; color: var(--ink-faint); }
+  .cl-row.is-done .cl-title { color: var(--ink-muted); }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px; font-weight: 600;
+    letter-spacing: 0.01em; padding: 3px 10px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap;
+  }
+  .pill.done { color: var(--status-done); background: var(--status-done-bg); border-color: var(--status-done-bd); }
+  .pill.pending { color: var(--status-pending); background: var(--status-pending-bg); border-color: var(--status-pending-bd); }
+  .pill.fail { color: var(--status-fail); background: var(--status-fail-bg); border-color: var(--status-fail-bd); }
+  .pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+  /* ---------- Test table (interactive) ---------- */
+  .test-list { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
+  .test-row {
+    display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: center;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+  }
+  .test-row:last-child { border-bottom: none; }
+  .test-row:nth-child(odd) { background: var(--surface-2); }
+  .test-name { font-size: 13.5px; font-weight: 600; }
+  .test-expect { font-size: 12.5px; color: var(--ink-faint); }
+  .status-cycle {
+    appearance: none; cursor: pointer; border: 1px solid var(--border-strong); border-radius: 999px;
+    background: var(--surface); padding: 3px 4px; display: flex; gap: 2px;
+  }
+  .status-cycle .seg {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 700;
+    padding: 4px 9px; border-radius: 999px; color: var(--ink-faint);
+  }
+  .status-cycle .seg.active.pending { background: var(--status-pending-bg); color: var(--status-pending); }
+  .status-cycle .seg.active.done { background: var(--status-done-bg); color: var(--status-done); }
+  .status-cycle .seg.active.fail { background: var(--status-fail-bg); color: var(--status-fail); }
+
+  @media (max-width: 620px) {
+    .test-row { grid-template-columns: 1fr; }
+    .status-cycle { justify-self: start; }
+  }
+
+  /* ---------- eTIMS facts ---------- */
+  .factsheet { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); margin-bottom: 16px; }
+  .fact { background: var(--surface); padding: 13px 16px; }
+  .fact .fk { font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  .fact .fv { font-family: "IBM Plex Mono", monospace; font-size: 13.5px; }
+  @media (max-width: 560px) { .factsheet { grid-template-columns: 1fr; } }
+
+  .card-text { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; box-shadow: var(--shadow); margin-bottom: 16px; }
+  .card-text p { margin: 0 0 10px; max-width: 66ch; }
+  .card-text p:last-child { margin-bottom: 0; }
+
+  /* ---------- Timeline (overview tab) ---------- */
+  .timeline { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--border-strong); margin-left: 4px; }
+  .timeline li { position: relative; padding: 0 0 18px 24px; }
+  .timeline li::before { content: ""; position: absolute; left: -5px; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); }
+  .timeline li:last-child { padding-bottom: 0; }
+  .t-date { font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 600; color: var(--accent-ink); background: var(--accent-soft); display: inline-block; padding: 2px 8px; border-radius: 5px; margin-bottom: 5px; }
+  .t-text { font-size: 14px; }
+
+  .reset-row { margin-top: 18px; display: flex; justify-content: flex-end; }
+  .reset-btn {
+    appearance: none; background: none; border: 1px solid var(--border-strong); color: var(--ink-faint);
+    border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer;
+  }
+  .reset-btn:hover { color: var(--ink-muted); border-color: var(--ink-faint); }
+
+  footer.page-foot {
+    margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border);
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--ink-faint);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="eyebrow">Labocast Kenya &middot; Odoo Community v10</span>
+      <h1>Migration Status Console</h1>
+    </div>
+    <span class="live-chip"><span class="dot"></span>Independent server reachable</span>
+  </div>
+
+  <div class="overview">
+    <div class="ring-wrap">
+      <div class="ring">
+        <svg width="128" height="128" viewBox="0 0 128 128">
+          <circle class="ring-bg" cx="64" cy="64" r="54"></circle>
+          <circle id="ringFg" class="ring-fg" cx="64" cy="64" r="54" stroke-dasharray="339" stroke-dashoffset="339"></circle>
+        </svg>
+        <div class="ring-label"><span class="n" id="ringPct">0%</span><span class="l">complete</span></div>
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-tile"><div class="n done" id="statDone">0</div><div class="l">Confirmed</div></div>
+      <div class="stat-tile"><div class="n pending" id="statPending">0</div><div class="l">To validate</div></div>
+      <div class="stat-tile"><div class="n" id="statTotal">0</div><div class="l">Checklist items</div></div>
+      <div class="stat-tile"><div class="n done">1</div><div class="l">Server confirmed live</div></div>
+      <div class="stat-tile"><div class="n pending" id="statTests">13</div><div class="l">Tests pending</div></div>
+      <div class="stat-tile"><div class="n">1</div><div class="l">Regulatory filing</div></div>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-panel="overview" aria-selected="true">Overview</button>
+    <button class="tab" role="tab" data-panel="checklist" aria-selected="false">Checklist</button>
+    <button class="tab" role="tab" data-panel="tests" aria-selected="false">Staging Tests</button>
+    <button class="tab" role="tab" data-panel="etims" aria-selected="false">eTIMS</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="panel active" id="panel-overview">
+    <div class="card-text">
+      <p>Labocast Kenya is migrating its Odoo Community v10 environment from provider Octaly's hosting to an independent infrastructure. This console tracks the handover, the checklist, staging validation, and the parallel KRA eTIMS feasibility work — click any checklist or test item to update its status as work progresses.</p>
+    </div>
+    <ul class="timeline">
+      <li><span class="t-date">01/07/2026</span><div class="t-text">Technical consultant engaged for the takeover and security hardening.</div></li>
+      <li><span class="t-date">14/07/2026</span><div class="t-text">Octaly begins preparing the handover package.</div></li>
+      <li><span class="t-date">27&ndash;30/07/2026</span><div class="t-text">Data and modules transmitted to the technical consultant.</div></li>
+      <li><span class="t-date">11/08/2026</span><div class="t-text">KRA eTIMS Acknowledgement and Commitment Form submitted.</div></li>
+      <li><span class="t-date">26/08/2026</span><div class="t-text">Independent server confirmed live and reachable (public homepage + login).</div></li>
+    </ul>
+  </div>
+
+  <!-- CHECKLIST -->
+  <div class="panel" id="panel-checklist">
+    <div class="filter-row">
+      <button class="filter-btn" data-filter="all" aria-pressed="true">All</button>
+      <button class="filter-btn" data-filter="pending" aria-pressed="false">To validate</button>
+      <button class="filter-btn" data-filter="done" aria-pressed="false">Done</button>
+      <div class="filter-spacer"></div>
+      <span class="hint">Click a row to toggle its status</span>
+    </div>
+    <div class="checklist" id="checklistEl"></div>
+    <div class="reset-row"><button class="reset-btn" id="resetChecklist">Reset checklist</button></div>
+  </div>
+
+  <!-- TESTS -->
+  <div class="panel" id="panel-tests">
+    <div class="filter-row"><span class="hint">Click a status badge to cycle: to test → pass → fail</span><div class="filter-spacer"></div></div>
+    <div class="test-list" id="testListEl"></div>
+    <div class="reset-row"><button class="reset-btn" id="resetTests">Reset tests</button></div>
+  </div>
+
+  <!-- ETIMS -->
+  <div class="panel" id="panel-etims">
+    <div class="card-text">
+      <p>Parallel feasibility study for Kenyan tax compliance via eTIMS (Kenya Revenue Authority). Acknowledgement and Commitment Form submitted 11/08/2026.</p>
+    </div>
+    <div class="factsheet">
+      <div class="fact"><div class="fk">Entity</div><div class="fv">Reuni Dent Africa Ltd</div></div>
+      <div class="fact"><div class="fk">PIN</div><div class="fv">P052438337K</div></div>
+      <div class="fact"><div class="fk">Integration selected</div><div class="fv">OSCU (Online Sales Control Unit)</div></div>
+      <div class="fact"><div class="fk">Integration mode</div><div class="fv">Self-integration</div></div>
+      <div class="fact"><div class="fk">Invoicing system</div><div class="fv">Odoo 10.0 CE &mdash; occ_labocast_kenya</div></div>
+      <div class="fact"><div class="fk">Form submitted</div><div class="fv">11/08/2026</div></div>
+    </div>
+    <div class="card-text"><p><b>Next step:</b> specify the Odoo v10 connector for exchanging with the OSCU (invoice issuance, receipt of fiscal identifiers), aligned with the new takeover infrastructure.</p></div>
+  </div>
+
+  <footer class="page-foot">
+    <span>Migration Status Console</span>
+    <span>Labocast Kenya &middot; live view, updates saved on this device only</span>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var CHECKLIST = [
+    { id: "audit", title: "Audit of the source environment", desc: "Odoo / PostgreSQL / Python / Ubuntu versions, installed modules", status: "pending" },
+    { id: "recovery", title: "Data recovery", desc: "PostgreSQL dump, filestore, add-ons, configuration", status: "done" },
+    { id: "server", title: "Target server preparation", desc: "Linux server, baseline hardening", status: "done" },
+    { id: "install", title: "Odoo v10 installation", desc: "Odoo, PostgreSQL, Python dependencies", status: "done" },
+    { id: "restore", title: "Database + filestore restore", desc: "Integrity of restored data", status: "pending" },
+    { id: "modules", title: "Custom modules", desc: "Reinstallation and verification of business modules", status: "pending" },
+    { id: "ssl", title: "Nginx / SSL", desc: "Domain or subdomain, certificate", status: "pending" },
+    { id: "hardening", title: "Server hardening", desc: "SSH keys, firewall, Fail2ban", status: "pending" },
+    { id: "backups", title: "Automated backups", desc: "Setup + real restore test", status: "pending" },
+    { id: "docs", title: "Technical documentation", desc: "Architecture, procedures, access, maintenance", status: "pending" },
+    { id: "staging", title: "Staging environment", desc: "Made available for functional testing", status: "pending" }
+  ];
+
+  var TESTS = [
+    { id: "login", name: "User login", expect: "Nominal access per assigned rights", status: "pending" },
+    { id: "orders", name: "Orders (creation / edit)", expect: "Data consistency", status: "pending" },
+    { id: "scan", name: "Case reception and scanning", expect: "Correct production flow", status: "pending" },
+    { id: "prod", name: "Production status changes", expect: "Correct workflow update", status: "pending" },
+    { id: "courier", name: "Courier management", expect: "Functional logistics tracking", status: "pending" },
+    { id: "invoice", name: "Invoicing", expect: "Correct invoice generation", status: "pending" },
+    { id: "pdf", name: "PDF printing", expect: "Correct rendering (invoices, reports)", status: "pending" },
+    { id: "email", name: "E-mail sending", expect: "Effective delivery of notifications", status: "pending" },
+    { id: "cron", name: "Scheduled tasks", expect: "Correct automatic execution", status: "pending" },
+    { id: "history", name: "Customer history", expect: "Continuity of historical data", status: "pending" },
+    { id: "attach", name: "Attachments / files", expect: "Accessibility and integrity", status: "pending" },
+    { id: "access", name: "Access rights, Kenya / Labo OI", expect: "Correct separation of access", status: "pending" },
+    { id: "perf", name: "Overall performance", expect: "Acceptable response times", status: "pending" }
+  ];
+
+  var STORE_KEY = "labocast_migration_console_v1";
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) { return null; }
+  }
+  function saveState() {
+    try {
+      var out = { checklist: {}, tests: {} };
+      CHECKLIST.forEach(function (i) { out.checklist[i.id] = i.status; });
+      TESTS.forEach(function (i) { out.tests[i.id] = i.status; });
+      localStorage.setItem(STORE_KEY, JSON.stringify(out));
+    } catch (e) { /* storage unavailable, ignore */ }
+  }
+  (function applyStored() {
+    var s = loadState();
+    if (!s) return;
+    CHECKLIST.forEach(function (i) { if (s.checklist && s.checklist[i.id]) i.status = s.checklist[i.id]; });
+    TESTS.forEach(function (i) { if (s.tests && s.tests[i.id]) i.status = s.tests[i.id]; });
+  })();
+
+  var checklistFilter = "all";
+
+  function pillLabel(status) {
+    if (status === "done") return "Done";
+    if (status === "fail") return "Fail";
+    return "To validate";
+  }
+
+  function renderChecklist() {
+    var el = document.getElementById("checklistEl");
+    el.innerHTML = "";
+    var visible = CHECKLIST.filter(function (i) {
+      if (checklistFilter === "all") return true;
+      return i.status === checklistFilter;
+    });
+    visible.forEach(function (item) {
+      var row = document.createElement("div");
+      row.className = "cl-row" + (item.status === "done" ? " is-done" : "");
+      row.setAttribute("role", "button");
+      row.setAttribute("tabindex", "0");
+      row.setAttribute("aria-pressed", item.status === "done" ? "true" : "false");
+
+      var main = document.createElement("div");
+      main.className = "cl-main";
+      var t = document.createElement("div"); t.className = "cl-title"; t.textContent = item.title;
+      var d = document.createElement("div"); d.className = "cl-desc"; d.textContent = item.desc;
+      main.appendChild(t); main.appendChild(d);
+
+      var pill = document.createElement("span");
+      pill.className = "pill " + (item.status === "done" ? "done" : "pending");
+      pill.textContent = pillLabel(item.status);
+
+      row.appendChild(main);
+      row.appendChild(pill);
+
+      function toggle() {
+        item.status = item.status === "done" ? "pending" : "done";
+        saveState();
+        renderChecklist();
+        renderOverview();
+      }
+      row.addEventListener("click", toggle);
+      row.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+      });
+
+      el.appendChild(row);
+    });
+  }
+
+  function nextTestStatus(s) {
+    if (s === "pending") return "done";
+    if (s === "done") return "fail";
+    return "pending";
+  }
+  function testSegLabel(s) {
+    if (s === "done") return "Pass";
+    if (s === "fail") return "Fail";
+    return "Test";
+  }
+
+  function renderTests() {
+    var el = document.getElementById("testListEl");
+    el.innerHTML = "";
+    TESTS.forEach(function (item) {
+      var row = document.createElement("div");
+      row.className = "test-row";
+
+      var name = document.createElement("div");
+      name.className = "test-name"; name.textContent = item.name;
+
+      var expect = document.createElement("div");
+      expect.className = "test-expect"; expect.textContent = item.expect;
+
+      var cycle = document.createElement("button");
+      cycle.className = "status-cycle";
+      cycle.type = "button";
+      cycle.setAttribute("aria-label", item.name + " status: " + pillLabel(item.status === "fail" ? "fail" : item.status));
+
+      var seg = document.createElement("span");
+      seg.className = "seg active " + item.status;
+      seg.textContent = testSegLabel(item.status);
+      cycle.appendChild(seg);
+
+      cycle.addEventListener("click", function () {
+        item.status = nextTestStatus(item.status);
+        saveState();
+        renderTests();
+        renderOverview();
+      });
+
+      row.appendChild(name);
+      row.appendChild(expect);
+      row.appendChild(cycle);
+      el.appendChild(row);
+    });
+  }
+
+  var RING_CIRC = 339; // 2 * PI * 54
+
+  function renderOverview() {
+    var done = CHECKLIST.filter(function (i) { return i.status === "done"; }).length;
+    var total = CHECKLIST.length;
+    var pct = Math.round((done / total) * 100);
+
+    document.getElementById("statDone").textContent = String(done);
+    document.getElementById("statPending").textContent = String(total - done);
+    document.getElementById("statTotal").textContent = String(total);
+    document.getElementById("ringPct").textContent = pct + "%";
+
+    var offset = RING_CIRC - (RING_CIRC * pct / 100);
+    document.getElementById("ringFg").style.strokeDashoffset = String(offset);
+
+    var testsPending = TESTS.filter(function (i) { return i.status === "pending"; }).length;
+    document.getElementById("statTests").textContent = String(testsPending);
+  }
+
+  // Tabs
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+  tabs.forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      tabs.forEach(function (t) { t.setAttribute("aria-selected", "false"); });
+      tab.setAttribute("aria-selected", "true");
+      Array.prototype.slice.call(document.querySelectorAll(".panel")).forEach(function (p) { p.classList.remove("active"); });
+      document.getElementById("panel-" + tab.dataset.panel).classList.add("active");
+    });
+  });
+
+  // Checklist filters
+  Array.prototype.slice.call(document.querySelectorAll(".filter-btn")).forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll(".filter-btn").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
+      btn.setAttribute("aria-pressed", "true");
+      checklistFilter = btn.dataset.filter;
+      renderChecklist();
+    });
+  });
+
+  document.getElementById("resetChecklist").addEventListener("click", function () {
+    CHECKLIST.forEach(function (i) { i.status = i.id === "recovery" || i.id === "server" || i.id === "install" ? "done" : "pending"; });
+    saveState(); renderChecklist(); renderOverview();
+  });
+  document.getElementById("resetTests").addEventListener("click", function () {
+    TESTS.forEach(function (i) { i.status = "pending"; });
+    saveState(); renderTests(); renderOverview();
+  });
+
+  renderChecklist();
+  renderTests();
+  renderOverview();
+})();
+</script>
+</body>
+</html>
