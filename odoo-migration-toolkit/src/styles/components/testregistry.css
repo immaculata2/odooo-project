@@ -1,0 +1,134 @@
+/* TestRegistry Component Styles */
+.test-registry-section {
+  margin-bottom: var(--space-2xl);
+}
+
+.test-registry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-lg);
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.test-registry-title {
+  font-size: 1.5rem;
+  color: var(--color-text);
+}
+
+.test-registry-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.test-registry-table thead {
+  background-color: var(--color-bg);
+}
+
+.test-registry-table th {
+  text-align: left;
+  padding: var(--space-md) var(--space-lg);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.test-registry-table td {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color var(--transition-fast);
+}
+
+.test-registry-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.test-registry-table tbody tr:hover td {
+  background-color: var(--color-bg);
+}
+
+.test-name {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.test-expectation {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.test-status-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+}
+
+.test-status-btn.pending {
+  background-color: rgba(217, 119, 6, 0.1);
+  color: var(--color-warning);
+  border-color: rgba(217, 119, 6, 0.2);
+}
+
+.test-status-btn.done {
+  background-color: rgba(45, 122, 79, 0.1);
+  color: var(--color-success);
+  border-color: rgba(45, 122, 79, 0.2);
+}
+
+.test-status-btn.fail {
+  background-color: rgba(220, 38, 38, 0.1);
+  color: var(--color-danger);
+  border-color: rgba(220, 38, 38, 0.2);
+}
+
+.test-status-btn:hover {
+  transform: scale(1.05);
+}
+
+.test-status-btn.pending:hover {
+  background-color: rgba(217, 119, 6, 0.2);
+}
+
+.test-status-btn.done:hover {
+  background-color: rgba(45, 122, 79, 0.2);
+}
+
+.test-status-btn.fail:hover {
+  background-color: rgba(220, 38, 38, 0.2);
+}
+
+@media (max-width: 768px) {
+  .test-registry-table {
+    font-size: 0.875rem;
+  }
+  
+  .test-registry-table th,
+  .test-registry-table td {
+    padding: var(--space-sm) var(--space-md);
+  }
+  
+  .test-expectation {
+    display: none;
+  }
+}
